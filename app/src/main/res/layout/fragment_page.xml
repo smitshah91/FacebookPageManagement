@@ -1,0 +1,33 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="100dp"
+    tools:context="com.example.smit.fbpage.PageFragment"
+    android:layout_marginTop="10dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/fragmentButton"
+            android:background="@android:color/transparent"/>
+
+        <com.facebook.login.widget.ProfilePictureView
+            android:layout_width="@dimen/com_facebook_profilepictureview_preset_size_normal"
+            android:layout_height="@dimen/com_facebook_profilepictureview_preset_size_normal"
+            android:id="@+id/pagePicture" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/pageText"
+            android:layout_toRightOf="@+id/pagePicture"
+            android:layout_marginLeft="40dp"
+            android:textSize="20dp"/>
+
+    </RelativeLayout>
+
+</FrameLayout>

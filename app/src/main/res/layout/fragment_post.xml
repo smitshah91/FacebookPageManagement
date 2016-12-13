@@ -1,0 +1,49 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.smit.fbpage.PostFragment"
+    android:layout_marginTop="10dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.facebook.login.widget.ProfilePictureView
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:id="@+id/postProfilePic"/>
+        <TextView
+            android:layout_width="80dp"
+            android:layout_height="30dp"
+            android:id="@+id/postPageName"
+            android:layout_alignParentTop="true"
+            android:layout_toRightOf="@+id/postProfilePic"
+            android:layout_marginLeft="20dp"
+            android:textSize="15dp"
+            android:textAlignment="center"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/postMessage"
+            android:layout_below="@+id/postProfilePic"
+            android:layout_marginTop="5dp"
+            android:textSize="20dp" />
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:id="@+id/postImage"
+            android:layout_below="@+id/postMessage"
+            android:visibility="gone"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/postViews"
+            android:layout_below="@+id/postImage"
+            android:textSize="10dp"
+            android:textAlignment="center"
+            android:textStyle="normal|italic" />
+
+    </RelativeLayout>
+
+</FrameLayout>

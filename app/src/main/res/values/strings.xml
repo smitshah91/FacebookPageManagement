@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">FbPage</string>
+    <string name="facebook_app_id">347413442302942</string>
+    <string name="fb_login_protocol_scheme">fb347413442302942</string>
+    <string name="access_token">EAAE7ZBH7Rk94BAOXHJ8iaKH5zkQfimmzqXc620eTMeqNmZBh8WVoKdmn0r0Jal2vOUNRZCciIhlmCG8gQZCg92LAKFA2Xm71cqAvljgJLHGSw4Pa3gswGQLDz3ja8Ms7JO2ovk5FnZCQCYt0uWBYKnX3rD7b5tbcZD</string>
+    <string name="smit_user_id">10207540879226797</string>
+    <string name="accounts_graph_path">me/accounts</string>
+    <string name="parameters_pages">id,name,category,picture</string>
+    <string name="post_publish">Publish Post</string>
+    <string name="page_details_graph_path">/promotable_posts</string>
+    <string name="paramaeters_page_details">is_published,message,promotion_status,picture,insights.metric(post_impressions)</string>
+
+</resources>
