@@ -77,7 +77,6 @@ public class FacebookApi {
                             for(int i=0; i<pageArray.length(); i++)
                             {
                                 JSONObject jsonObject = pageArray.getJSONObject(i);
-
                                 pages.add(new Page(jsonObject.optString("id"), jsonObject.optString("name"), jsonObject.optString("access_token")));
                             }
                         }

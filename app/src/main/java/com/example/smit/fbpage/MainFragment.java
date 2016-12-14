@@ -8,6 +8,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.example.smit.fbpage.facebookapi.FacebookApi;
 import com.example.smit.fbpage.model.Page;
@@ -38,12 +39,12 @@ public class MainFragment extends Fragment {
 
         @Override
         public void onCancel() {
-            System.out.println("Login Cancelled");
+            Toast.makeText(getActivity().getApplicationContext(),"Login Cancelled",Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onError(FacebookException error) {
-            System.out.println("Login Error");
+            Toast.makeText(getActivity().getApplicationContext(),"Login Error",Toast.LENGTH_SHORT).show();
         }
     };
 
