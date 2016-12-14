@@ -2,7 +2,6 @@ package com.example.smit.fbpage;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -15,25 +14,15 @@ import android.widget.TextView;
 import com.facebook.login.widget.ProfilePictureView;
 
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link PostFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link PostFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class PostFragment extends Fragment {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+
     private static final String PAGE_ID = "pageID";
     private static final String PAGE_NAME = "pageName";
     private static final String MESSAGE = "postMessage";
     private static final String PICTURE = "postPicture";
 
-    // TODO: Rename and change types of parameters
     private String pageID, pageName, postMessage;
-    private byte[] postImageByteArray;
+    private Bitmap postImageBitmap;
 
     ProfilePictureView pageProfilePicture;
     TextView pageNameView;
@@ -43,17 +32,15 @@ public class PostFragment extends Fragment {
 
     private OnFragmentInteractionListener mListener;
 
-    public PostFragment() {
+    public PostFragment() {}
 
-    }
-
-    public static PostFragment newInstance(String id, String name, String message, byte[] pic) {
+    public static PostFragment newInstance(String id, String name, String message, Bitmap pic) {
         PostFragment fragment = new PostFragment();
         Bundle args = new Bundle();
         args.putString(PAGE_ID, id);
         args.putString(PAGE_NAME, name);
         args.putString(MESSAGE, message);
-        args.putByteArray(PICTURE, pic);
+        args.putParcelable(PICTURE, pic);
         fragment.setArguments(args);
         return fragment;
     }
@@ -65,7 +52,7 @@ public class PostFragment extends Fragment {
             pageID = getArguments().getString(PAGE_ID);
             pageName = getArguments().getString(PAGE_NAME);
             postMessage = getArguments().getString(MESSAGE);
-            postImageByteArray = getArguments().getByteArray(PICTURE);
+            postImageBitmap = getArguments().getParcelable(PICTURE);
         }
     }
 
@@ -84,16 +71,14 @@ public class PostFragment extends Fragment {
         pageProfilePicture.setProfileId(pageID);
         pageNameView.setText(pageName);
         postMessageView.setText(postMessage);
-        if(postImageByteArray != null)
+        if(postImageBitmap != null)
         {
             postImage.setVisibility(View.VISIBLE);
-            Bitmap postImageBitmap = BitmapFactory.decodeByteArray(postImageByteArray,0,postImageByteArray.length);
             postImage.setImageBitmap(postImageBitmap);
         }
         return view;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
@@ -117,18 +102,7 @@ public class PostFragment extends Fragment {
         mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
     }
 }

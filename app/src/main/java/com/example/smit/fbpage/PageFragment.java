@@ -2,10 +2,7 @@ package com.example.smit.fbpage;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -16,42 +13,27 @@ import android.widget.TextView;
 
 import com.facebook.login.widget.ProfilePictureView;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URL;
-
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link PageFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link PageFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class PageFragment extends Fragment {
 
-    private static final String ARG_PARAM1 = "id";
-    private static final String ARG_PARAM2 = "name";
-    private static final String ARG_PARAM3 = "token";
+    private static final String PAGE_ID = "id";
+    private static final String PAGE_NAME = "name";
+    private static final String PAGE_TOKEN = "token";
 
     private String pageId, pageName, pageToken;
     ProfilePictureView profilePicture;
     TextView textView;
     Button fragmentButton;
 
-
     private OnFragmentInteractionListener mListener;
 
-    public PageFragment() {
-
-    }
+    public PageFragment() {}
 
     public static PageFragment newInstance(String id, String name, String token) {
         PageFragment fragment = new PageFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, id);
-        args.putString(ARG_PARAM2, name);
-        args.putString(ARG_PARAM3, token);
+        args.putString(PAGE_ID, id);
+        args.putString(PAGE_NAME, name);
+        args.putString(PAGE_TOKEN, token);
         fragment.setArguments(args);
         return fragment;
     }
@@ -59,11 +41,10 @@ public class PageFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         if (getArguments() != null) {
-            pageId = getArguments().getString(ARG_PARAM1);
-            pageName = getArguments().getString(ARG_PARAM2);
-            pageToken = getArguments().getString(ARG_PARAM3);
+            pageId = getArguments().getString(PAGE_ID);
+            pageName = getArguments().getString(PAGE_NAME);
+            pageToken = getArguments().getString(PAGE_TOKEN);
         }
     }
 
@@ -120,16 +101,6 @@ public class PageFragment extends Fragment {
         mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);

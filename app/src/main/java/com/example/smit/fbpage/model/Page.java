@@ -1,15 +1,17 @@
 package com.example.smit.fbpage.model;
 
-import android.graphics.Bitmap;
-
-/**
- * Created by Smit on 12/5/2016.
- */
-
 public class Page {
 
-    String id, name, category;
-    Bitmap profilePic;
+    private String id, name, category, accessToken;
+
+    public Page(String id, String name, String token)
+    {
+        this.id = id;
+        this.name = name;
+        this.accessToken = token;
+    }
+
+    public Page() {}
 
     public String getId() {
         return id;
@@ -35,11 +37,11 @@ public class Page {
         this.category = category;
     }
 
-    public Bitmap getProfilePic() {
-        return profilePic;
+    public String getAccessToken() {
+        return accessToken;
     }
 
-    public void setProfilePic(Bitmap profilePic) {
-        this.profilePic = profilePic;
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 }

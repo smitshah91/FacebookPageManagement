@@ -2,124 +2,38 @@ package com.example.smit.fbpage;
 
 import android.content.Intent;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.example.smit.fbpage.facebookapi.FacebookApi;
+import com.example.smit.fbpage.model.Page;
+import com.example.smit.fbpage.model.Profile;
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
-import com.facebook.GraphRequest;
-import com.facebook.GraphRequestBatch;
-import com.facebook.GraphResponse;
-import com.facebook.HttpMethod;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URL;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 
 public class MainFragment extends Fragment {
 
     private CallbackManager callbackManager;
-    private LoginButton fbLoginButton;
-    private String name;
+    private String name, id;
     private String[] pageId, pageName, pageAccessToken;
-    byte[] profilePicArray;
 
     private FacebookCallback<LoginResult> callBack = new FacebookCallback<LoginResult>() {
         @Override
         public void onSuccess(final LoginResult loginResult) {
-
-            Bundle meRequestParameters = new Bundle();
-            meRequestParameters.putString("fields", "id,name,email,location,picture");
-
-            Bundle pageRequestParameters = new Bundle();
-            pageRequestParameters.putString("fields", "id,name,category,picture,access_token");
-
-            GraphRequest meRequest = GraphRequest.newMeRequest(
-                    loginResult.getAccessToken(),
-                    new GraphRequest.GraphJSONObjectCallback() {
-                        @Override
-                        public void onCompleted(
-                                JSONObject object,
-                                GraphResponse response) {
-                            System.out.println(loginResult.getAccessToken());
-                            System.out.println(AccessToken.getCurrentAccessToken());
-                            try {
-                                name = object.optString("name");
-
-                                if (object.has("picture")) {
-                                    if(object.getJSONObject("picture").has("data"))
-                                    {
-                                        String profilePicUrl = object.getJSONObject("picture").getJSONObject("data").getString("url");
-                                        new NetworkTask(profilePicUrl).execute();
-                                    }
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                e.printStackTrace();
-                            }
-
-                        }
-                    });
-
-            GraphRequest pagesRequest = new GraphRequest(AccessToken.getCurrentAccessToken(),"me/accounts",
-                    pageRequestParameters, HttpMethod.GET, new GraphRequest.Callback()
-            {
-                @Override
-                public void onCompleted(GraphResponse response) {
-                    System.out.println(response.toString());
-                    JSONObject object = response.getJSONObject();
-                    if(object != null)
-                    {
-                        try {
-                            JSONArray pageArray =object.getJSONArray("data");
-                            if(pageArray != null)
-                            {
-
-                                pageId = new String[pageArray.length()];
-                                pageName = new String[pageArray.length()];
-                                pageAccessToken = new String[pageArray.length()];
-
-                                for(int i=0; i<pageArray.length(); i++)
-                                {
-                                    JSONObject jsonObject = pageArray.getJSONObject(i);
-                                    pageId[i] = jsonObject.getString("id");
-                                    pageName[i] = jsonObject.getString("name");
-                                    pageAccessToken[i] = jsonObject.getString("access_token");
-                                }
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-
-            meRequest.setParameters(meRequestParameters);
-            meRequest.executeAsync();
-
-            pagesRequest.setParameters(pageRequestParameters);
-            pagesRequest.executeAsync();
-
-
-            //getUserDataAndPages(loginResult.getAccessToken());
+            getLoggedIn(loginResult.getAccessToken());
+            startProfileActivity();
         }
 
         @Override
@@ -133,34 +47,51 @@ public class MainFragment extends Fragment {
         }
     };
 
+    private void getLoggedIn(AccessToken token) {
+        Profile profile;
+        List<Page> pageList;
+        try {
+            profile = new MyProfile(token).execute().get();
+            pageList = new MyPages(token).execute().get();
+
+            name = profile.getProfileName();
+            id = profile.getProfileId();
+
+            pageId = getPageIdArray(pageList);
+            pageName = getPageNameArray(pageList);
+            pageAccessToken = getPageTokenArray(pageList);
+
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         FacebookSdk.sdkInitialize(getActivity().getApplicationContext());
         callbackManager = CallbackManager.Factory.create();
-
-        /*if(isLoggedIn())
-        {
-            getUserDataAndPages(AccessToken.getCurrentAccessToken());
-            startProfileActivity();
-        }*/
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_main, container, false);
-
     }
 
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        fbLoginButton = (LoginButton) view.findViewById(R.id.login_button);
+        LoginButton fbLoginButton = (LoginButton) view.findViewById(R.id.login_button);
         fbLoginButton.setFragment(this);
         fbLoginButton.registerCallback(callbackManager, callBack);
 
+        if(isLoggedIn())
+        {
+            getLoggedIn(AccessToken.getCurrentAccessToken());
+            startProfileActivity();
+        }
     }
 
     @Override
@@ -169,43 +100,34 @@ public class MainFragment extends Fragment {
         callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
-    public class NetworkTask extends AsyncTask<Void, Void, Bitmap> {
-        private String urlString;
-
-        NetworkTask(String url)
+    public class MyProfile extends AsyncTask<Void, Void, Profile> {
+        private AccessToken token;
+        MyProfile(AccessToken accessToken)
         {
-            this.urlString = url;
+            token = accessToken;
         }
-
         @Override
-        protected Bitmap doInBackground(Void... voids) {
-            URL url;
-            Bitmap profilePic = null;
-            try {
-                url = new URL(urlString);
-                profilePic = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return profilePic;
+        protected Profile doInBackground(Void... voids) {
+            return FacebookApi.GetMyProfile(token);
         }
+    }
 
-        @Override
-        protected void onPostExecute(Bitmap image)
+    public class MyPages extends AsyncTask<Void, Void, List<Page>> {
+        private AccessToken token;
+        MyPages(AccessToken accessToken)
         {
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            image.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            profilePicArray = stream.toByteArray();
-
-            startProfileActivity();
+            token = accessToken;
+        }
+        @Override
+        protected List<Page> doInBackground(Void... voids) {
+            return FacebookApi.GetPageList(token);
         }
     }
 
     private void startProfileActivity() {
         Intent profileIntent = new Intent(getActivity(), ProfileActivity.class);
         profileIntent.putExtra("name", name);
-        profileIntent.putExtra("profilePic", profilePicArray);
+        profileIntent.putExtra("profileId", id);
         profileIntent.putExtra("pageId", pageId);
         profileIntent.putExtra("pageName", pageName);
         profileIntent.putExtra("pageToken", pageAccessToken);
@@ -213,69 +135,38 @@ public class MainFragment extends Fragment {
         startActivity(profileIntent);
     }
 
-    private void getUserDataAndPages(AccessToken accessToken){
-        Bundle meRequestParameters = new Bundle();
-        meRequestParameters.putString("fields", "id,name,email,location,picture");
-
-        GraphRequest meRequest = GraphRequest.newMeRequest(
-                accessToken,
-                new GraphRequest.GraphJSONObjectCallback() {
-                    @Override
-                    public void onCompleted(
-                            JSONObject object,
-                            GraphResponse response) {
-
-                        try {
-                            name = object.optString("name");
-
-                            if (object.has("picture")) {
-                                if(object.getJSONObject("picture").has("data"))
-                                {
-                                    String profilePicUrl = object.getJSONObject("picture").getJSONObject("data").getString("url");
-                                    new NetworkTask(profilePicUrl).execute();
-                                }
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-                        }
-
-                    }
-                });
-
-        meRequest.setParameters(meRequestParameters);
-        meRequest.executeAsync();
-
-        Bundle pageRequestParameters = new Bundle();
-        pageRequestParameters.putString("fields", String.valueOf(R.string.parameters_pages));
-
-        GraphRequest pagesRequest = new GraphRequest(AccessToken.getCurrentAccessToken(),"me/accounts",
-                pageRequestParameters, HttpMethod.GET, new GraphRequest.Callback()
-        {
-            @Override
-            public void onCompleted(GraphResponse response) {
-                System.out.println(response.toString());
-            }
-        });
-
-        pagesRequest.setParameters(pageRequestParameters);
-        pagesRequest.executeAsync();
-
-        GraphRequestBatch batch = new GraphRequestBatch();
-        batch.add(meRequest);
-        batch.add(pagesRequest);
-        batch.addCallback(new GraphRequestBatch.Callback() {
-            @Override
-            public void onBatchCompleted(GraphRequestBatch graphRequests) {
-                startProfileActivity();
-            }
-        });
-        batch.executeAndWait();
-    }
-
     private boolean isLoggedIn() {
         AccessToken accessToken = AccessToken.getCurrentAccessToken();
         return accessToken != null;
+    }
+
+    private String[] getPageIdArray(List<Page> pageList)
+    {
+        String[] pageIdArray = new String[pageList.size()];
+        for (int i=0; i<pageList.size(); i++)
+        {
+               pageIdArray[i] = pageList.get(i).getId();
+        }
+        return pageIdArray;
+    }
+
+    private String[] getPageNameArray(List<Page> pageList)
+    {
+        String[] pageNameArray = new String[pageList.size()];
+        for (int i=0; i<pageList.size(); i++)
+        {
+            pageNameArray[i] = pageList.get(i).getName();
+        }
+        return pageNameArray;
+    }
+
+    private String[] getPageTokenArray(List<Page> pageList)
+    {
+        String[] pageTokenArray = new String[pageList.size()];
+        for (int i=0; i<pageList.size(); i++)
+        {
+            pageTokenArray[i] = pageList.get(i).getAccessToken();
+        }
+        return pageTokenArray;
     }
 }

@@ -1,19 +1,18 @@
 package com.example.smit.fbpage;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.facebook.login.widget.ProfilePictureView;
 
 public class ProfileActivity extends AppCompatActivity implements PageFragment.OnFragmentInteractionListener {
 
     TextView nameTextView;
-    ImageView profilePicView;
+    ProfilePictureView profilePicView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,23 +21,16 @@ public class ProfileActivity extends AppCompatActivity implements PageFragment.O
 
         Bundle data = getIntent().getExtras();
         String name = data.getString("name", null);
-        byte[] byteArray = data.getByteArray("profilePic");
+        String id = data.getString("profileId");
         String[] pageNames = data.getStringArray("pageName");
         String[] pageIds = data.getStringArray("pageId");
         String[] pageTokens = data.getStringArray("pageToken");
 
-        System.out.println();
-        Bitmap profilePic = null;
-        if(byteArray != null)
-        {
-            profilePic = BitmapFactory.decodeByteArray(byteArray,0,byteArray.length);
-        }
-
         nameTextView = (TextView) findViewById(R.id.textName);
-        profilePicView = (ImageView) findViewById(R.id.imageProfilePic);
+        profilePicView = (ProfilePictureView) findViewById(R.id.imageProfilePic);
 
         nameTextView.setText(name);
-        profilePicView.setImageBitmap(profilePic);
+        profilePicView.setProfileId(id);
 
         FragmentManager fm = getSupportFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
@@ -55,6 +47,6 @@ public class ProfileActivity extends AppCompatActivity implements PageFragment.O
 
     @Override
     public void onFragmentInteraction(Uri uri) {
-        System.out.println("OnFragmentInteraction");
+
     }
 }

@@ -7,24 +7,20 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.example.smit.fbpage.facebookapi.FacebookApi;
+import com.example.smit.fbpage.model.Post;
 import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
-import com.facebook.HttpMethod;
 import com.facebook.login.widget.ProfilePictureView;
-import com.facebook.share.widget.ShareButton;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -33,6 +29,7 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class PageDetailActivity extends AppCompatActivity implements PostFragment.OnFragmentInteractionListener{
@@ -42,7 +39,6 @@ public class PageDetailActivity extends AppCompatActivity implements PostFragmen
     Button postButton, cancelButton, shareButton;
     RelativeLayout postLayout;
     EditText postTextView;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,11 +64,9 @@ public class PageDetailActivity extends AppCompatActivity implements PostFragmen
         postButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                System.out.println("Onclick popup window");
-
                 postButton.setVisibility(View.GONE);
                 postLayout.setVisibility(View.VISIBLE);
-
+                postTextView.requestFocus();
             }
         });
 
@@ -84,34 +78,21 @@ public class PageDetailActivity extends AppCompatActivity implements PostFragmen
                 postLayout.setVisibility(View.GONE);
             }
         });
+
         shareButton = (Button) findViewById(R.id.shareButton);
         shareButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                JSONObject params = new JSONObject();
                 try {
-                    params.put("message", postTextView.getText());
                     String postAsPagePath = pageId + "/feed";
-                    if(params.has("message") && params.get("message") != "")
+                    if((postTextView.getText() != null) && (!postTextView.getText().equals("")))
                     {
-                        GraphRequest request = GraphRequest.newPostRequest(
-                                pageAccessToken,
-                                postAsPagePath,
-                                new JSONObject("{\"message\":\""+ postTextView.getText() +"\"}"),
-                                new GraphRequest.Callback() {
-                                    @Override
-                                    public void onCompleted(GraphResponse response) {
-                                        System.out.println("After Post" + response.toString());
-                                        Intent selfIntent = new Intent(PageDetailActivity.this, PageDetailActivity.class);
-                                        selfIntent.putExtra("pageID", pageId);
-                                        selfIntent.putExtra("pageName", pageName);
-                                        selfIntent.putExtra("pageToken", pageToken);
-                                        startActivity(selfIntent);
-                                    }
-                                });
-                        request.executeAsync();
+                        JSONObject object = new JSONObject("{\"message\":\""+ postTextView.getText() +"\"}");
+                        if(new PostStatus(pageAccessToken, postAsPagePath, object).execute().get()) {
+                            startSelfActivity(pageId, pageName, pageToken);
+                        }
                     }
-                } catch (JSONException e) {
+                } catch (JSONException | InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
 
@@ -123,7 +104,22 @@ public class PageDetailActivity extends AppCompatActivity implements PostFragmen
         pageDetailProfilePicture.setProfileId(pageId);
 
         String graphPath = pageId + "/promotable_posts";
-        GraphRequest request = GraphRequest.newGraphPathRequest(
+        try {
+            List<Post> postList = new PostListTask(graphPath, pageName, pageId).execute().get();
+
+            FragmentManager fm = getSupportFragmentManager();
+            FragmentTransaction ft = fm.beginTransaction();
+            for (Post post:postList)
+            {
+                PostFragment postFragment = PostFragment.newInstance(pageId, pageName, post.getMessage(), post.getPostImage());
+                ft.add(R.id.post_fragment_container, postFragment);
+            }
+
+            ft.commit();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        /*GraphRequest request = GraphRequest.newGraphPathRequest(
                 AccessToken.getCurrentAccessToken(),
                 graphPath,
                 new GraphRequest.Callback() {
@@ -176,12 +172,8 @@ public class PageDetailActivity extends AppCompatActivity implements PostFragmen
                                     ft.commit();
                                 }
                             }
-                            catch (JSONException e)
+                            catch (JSONException | ExecutionException | InterruptedException e)
                             {
-                                e.printStackTrace();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            } catch (ExecutionException e) {
                                 e.printStackTrace();
                             }
                         }
@@ -192,7 +184,31 @@ public class PageDetailActivity extends AppCompatActivity implements PostFragmen
         Bundle parameters = new Bundle();
         parameters.putString("fields", "insights.metric(post_impressions){values},message,name,picture");
         request.setParameters(parameters);
-        request.executeAsync();
+        request.executeAsync();*/
+    }
+
+    public class PostStatus extends AsyncTask<Void, Void, Boolean> {
+        private AccessToken token;
+        private String pagePath;
+        private JSONObject jsonObject;
+        PostStatus(AccessToken accessToken, String path, JSONObject object)
+        {
+            token = accessToken;
+            pagePath = path;
+            jsonObject = object;
+        }
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            return FacebookApi.postTextStatus(token, pagePath, jsonObject);
+        }
+    }
+
+    private void startSelfActivity(String id, String name, String token) {
+        Intent selfIntent = new Intent(PageDetailActivity.this, PageDetailActivity.class);
+        selfIntent.putExtra("pageID", id);
+        selfIntent.putExtra("pageName", name);
+        selfIntent.putExtra("pageToken", token);
+        startActivity(selfIntent);
     }
 
     @Override
@@ -200,31 +216,20 @@ public class PageDetailActivity extends AppCompatActivity implements PostFragmen
 
     }
 
-    public class PostPicTask extends AsyncTask<Void, Void, byte[]> {
-        private String urlString;
+    public class PostListTask extends AsyncTask<Void, Void, List<Post>> {
+        private String graphPath, pageName, pageId;
 
-        PostPicTask(String url)
+        PostListTask(String path, String name, String id)
         {
-            this.urlString = url;
+            this.graphPath= path;
+            this.pageName = name;
+            this.pageId = id;
         }
 
         @Override
-        protected byte[] doInBackground(Void... voids) {
-            URL url;
-            Bitmap profilePic = null;
-            try {
-                url = new URL(urlString);
-                profilePic = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                profilePic.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                return stream.toByteArray();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return null;
+        protected List<Post> doInBackground(Void... voids) {
+            return FacebookApi.getPagePosts(graphPath, pageName, pageId);
         }
-
     }
 
 }
